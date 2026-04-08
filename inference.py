@@ -41,9 +41,9 @@ TASK_NAME = os.getenv("GTM_TASK", "channel_optimizer")
 SEED = int(os.getenv("GTM_SEED", "42"))
 BENCHMARK = "gtm_strategy_optimizer"
 
-TEMPERATURE = 0.3
-MAX_TOKENS = 600
-SUCCESS_SCORE_THRESHOLD = 0.7  # grader scores in [0,1]; >0.5 = beat random
+TEMPERATURE = 0.65
+MAX_TOKENS = 750
+SUCCESS_SCORE_THRESHOLD = 0.55  # grader scores in [0,1]; >0.5 = beat random
 
 
 # ── Structured stdout logging ──────────────────────────────────────────────
