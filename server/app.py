@@ -122,7 +122,7 @@ def list_tasks() -> list[TaskInfo]:
 
 class GraderRequest(BaseModel):
     task_id: str
-    episode_id: str
+    episode_id: Optional[str] = None
 
 
 class GraderResponse(BaseModel):
@@ -132,23 +132,16 @@ class GraderResponse(BaseModel):
     message: str
 
 
-@app.post("/grader")
-def run_grader(req: GraderRequest) -> GraderResponse:
-    """Return grader score after an episode is completed.
+def _run_grader(task_id: str, episode_id: Optional[str] = None) -> GraderResponse:
+    """Core grader logic shared across endpoints."""
+    if task_id not in TASKS:
+        raise HTTPException(status_code=400, detail=f"Unknown task_id: {task_id}")
 
-    Note: In a full production setup, this would look up completed episodes.
-    For the hackathon, we run a quick deterministic episode if needed.
-    """
-    if req.task_id not in TASKS:
-        raise HTTPException(status_code=400, detail=f"Unknown task_id: {req.task_id}")
-
-    # Run a deterministic episode to produce a grader score
     from server.tasks import create_simulator, get_task
 
-    task_def = get_task(req.task_id)
-    sim = create_simulator(req.task_id, seed=42)
+    task_def = get_task(task_id)
+    sim = create_simulator(task_id, seed=42)
 
-    # Simple heuristic agent: equal allocation
     channels = list(sim.channels.keys())
     segments = list(sim.segments.keys())
     equal_budget = {ch: 1.0 / len(channels) for ch in channels}
@@ -164,11 +157,23 @@ def run_grader(req: GraderRequest) -> GraderResponse:
 
     score = task_def.grader(sim.state)
     return GraderResponse(
-        task_id=req.task_id,
-        episode_id=req.episode_id,
+        task_id=task_id,
+        episode_id=episode_id or "",
         score=score,
         message=f"Grader score for {task_def.name}: {score:.4f}",
     )
+
+
+@app.post("/grader")
+def run_grader(req: GraderRequest) -> GraderResponse:
+    """Return grader score for a task. episode_id is optional."""
+    return _run_grader(req.task_id, req.episode_id)
+
+
+@app.post("/tasks/{task_id}/grader")
+def run_task_grader(task_id: str, episode_id: Optional[str] = None) -> GraderResponse:
+    """Per-task grader endpoint: POST /tasks/{task_id}/grader"""
+    return _run_grader(task_id, episode_id)
 
 
 class BaselineResponse(BaseModel):
