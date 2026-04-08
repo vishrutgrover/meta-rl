@@ -1,0 +1,27 @@
+
+============================================================
+Running task: channel_optimizer (Provider: gemini, Model: gemini-1.5-flash)
+============================================================
+  LLM API error (attempt 1): 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.. Retrying in 15s...
+
+============================================================
+Running task: channel_optimizer (Provider: ollama, Model: llama3.1:8b)
+============================================================
+  Week 1/12 | Rev: $4,950 | Total: $4,950 | Brand: 51
+  Week 2/12 | Rev: $7,029 | Total: $11,979 | Brand: 51
+  Week 3/12 | Rev: $7,227 | Total: $19,206 | Brand: 53
+  Week 4/12 | Rev: $7,623 | Total: $26,829 | Brand: 53
+  Week 5/12 | Rev: $7,128 | Total: $33,957 | Brand: 52
+  Week 6/12 | Rev: $7,326 | Total: $41,283 | Brand: 53
+  Week 7/12 | Rev: $7,029 | Total: $48,312 | Brand: 54
+  Week 8/12 | Rev: $6,435 | Total: $54,747 | Brand: 54
+  Week 9/12 | Rev: $6,237 | Total: $60,984 | Brand: 55
+  Week 10/12 | Rev: $5,742 | Total: $66,726 | Brand: 56
+  Week 11/12 | Rev: $4,950 | Total: $71,676 | Brand: 55
+  Week 12/12 | Rev: $4,653 | Total: $76,329 | Brand: 56
+Grader score: 0.6361
+
+============================================================
+Running task: growth_strategist (Provider: ollama, Model: llama3.1:8b)
+============================================================
+  Week 1/24 | Rev: $6,109 | Total: $6,109 | Brand: 51

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gtm-strategy-optimizer"
+version = "1.0.0"
+description = "OpenEnv RL environment for Go-To-Market strategy optimization"
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core>=0.2.2",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "websockets>=15.0.1",
+    "openai>=1.0.0",
+    "numpy>=1.24.0",
+    "torch>=2.0.0",
+    "plotly>=5.0",
+    "pandas>=2.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools.packages.find]
+include = ["server*", "rl*", "ui*"]
