@@ -69,6 +69,7 @@ class TaskInfo(BaseModel):
     available_pricing_actions: list[str]
     action_schema: dict
     has_grader: bool = True
+    grader: str = ""
     grader_endpoint: str = "/grader"
 
 
@@ -115,6 +116,8 @@ def list_tasks() -> list[TaskInfo]:
                         "options": t.available_pricing_actions,
                     },
                 },
+                grader=f"/tasks/{task_id}/grader",
+                grader_endpoint=f"/tasks/{task_id}/grader",
             )
         )
     return result

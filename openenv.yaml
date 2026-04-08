@@ -4,3 +4,16 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 7860
+tasks:
+  - id: channel_optimizer
+    name: Channel Optimizer
+    difficulty: easy
+    grader: server.grader:grade_channel_optimizer
+  - id: growth_strategist
+    name: Growth Strategist
+    difficulty: medium
+    grader: server.grader:grade_growth_strategist
+  - id: market_dominator
+    name: Market Dominator
+    difficulty: hard
+    grader: server.grader:grade_market_dominator
