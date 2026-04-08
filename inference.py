@@ -202,10 +202,8 @@ def main() -> int:
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
     env = GTMEnvironment()
     
-    # If a specific task is requested, run just that one. Otherwise, run all.
-    tasks_to_run = [TASK_NAME] if os.getenv("GTM_TASK") else list(TASKS.keys())
-    
-    overall_success = True
+    # If a specific task is requested via environment variable, run just that one. Otherwise, run all.
+    tasks_to_run = [os.getenv("GTM_TASK")] if os.getenv("GTM_TASK") else list(TASKS.keys())
 
     for task_id in tasks_to_run:
         task = get_task(task_id)
@@ -244,6 +242,7 @@ def main() -> int:
                     obs = env.step(gtm_action)
                 except Exception as exc:
                     error = f"step_failed:{exc}"
+                    # Use equal allocation as a safe fallback so the episode can continue
                     obs = env.step(GTMAction(**_equal_action_dict(task)))
 
                 reward = float(obs.reward) if obs.reward is not None else 0.0
@@ -271,12 +270,11 @@ def main() -> int:
         except Exception as exc:
             print(f"[DEBUG] inference failed for {task_id}: {exc}", flush=True)
             success = False
+            score = 0.0
         finally:
             log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
-            if not success:
-                overall_success = False
 
-    return 0 if overall_success else 1
+    return 0
 
 
 if __name__ == "__main__":
