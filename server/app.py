@@ -15,8 +15,7 @@ from pydantic import BaseModel
 
 import gradio as gr
 
-from openenv.core.env_server import create_fastapi_app
-
+from openenv.core.env_server.http_server import create_app
 from models import GTMAction, GTMObservation
 from server.environment import GTMEnvironment
 from server.tasks import TASKS
@@ -24,7 +23,7 @@ from server.simulation import MESSAGING_DIMS
 from ui.dashboard import build_dashboard, DASHBOARD_CSS
 
 # Create the core OpenEnv FastAPI app (REST + WebSocket endpoints, no default UI)
-app = create_fastapi_app(GTMEnvironment, GTMAction, GTMObservation)
+app = create_app(GTMEnvironment, GTMAction, GTMObservation)
 
 # Mount our own custom Gradio dashboard at /web — bypasses OpenEnv's default
 # Playground tab so users only see the polished comparison + interactive UI.
