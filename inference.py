@@ -7,7 +7,7 @@ LLM agent (via the OpenAI client) and emits structured stdout logs in the
 Environment variables:
     API_BASE_URL   OpenAI-compatible base URL (default: HF router)
     MODEL_NAME     Model identifier (default: Qwen2.5-72B-Instruct)
-    HF_TOKEN       API key (or API_KEY)
+    HF_TOKEN       API key (or HF_TOKEN)
     GTM_TASK       Task to run: channel_optimizer | growth_strategist |
                    market_dominator (default: channel_optimizer)
     GTM_SEED       Episode seed (default: 42)
@@ -35,7 +35,7 @@ from server.tasks import TASKS, get_task
 
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "dummy"
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "dummy"
 
 TASK_NAME = os.getenv("GTM_TASK", "channel_optimizer")
 SEED = int(os.getenv("GTM_SEED", "42"))
@@ -43,7 +43,7 @@ BENCHMARK = "gtm_strategy_optimizer"
 
 TEMPERATURE = 0.3
 MAX_TOKENS = 600
-SUCCESS_SCORE_THRESHOLD = 0.5  # grader scores in [0,1]; >0.5 = beat random
+SUCCESS_SCORE_THRESHOLD = 0.7  # grader scores in [0,1]; >0.5 = beat random
 
 
 # ── Structured stdout logging ──────────────────────────────────────────────
@@ -209,7 +209,7 @@ def main() -> int:
         task_id = TASK_NAME
 
     task = get_task(task_id)
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     rewards: List[float] = []
     steps_taken = 0
