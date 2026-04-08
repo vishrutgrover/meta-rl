@@ -199,93 +199,84 @@ def _short_action_str(action_dict: Dict[str, Any]) -> str:
 
 
 def main() -> int:
-    if TASK_NAME not in TASKS:
-        print(
-            f"[DEBUG] Unknown GTM_TASK={TASK_NAME!r}, falling back to channel_optimizer",
-            flush=True,
-        )
-        task_id = "channel_optimizer"
-    else:
-        task_id = TASK_NAME
-
-    task = get_task(task_id)
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
-
-    rewards: List[float] = []
-    steps_taken = 0
-    score = 0.0
-    success = False
-
-    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
-
     env = GTMEnvironment()
-    try:
-        obs = env.reset(task_id=task_id, seed=SEED)
+    
+    # If a specific task is requested, run just that one. Otherwise, run all.
+    tasks_to_run = [TASK_NAME] if os.getenv("GTM_TASK") else list(TASKS.keys())
+    
+    overall_success = True
 
-        messages: List[Dict[str, str]] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": (
-                    f"Starting task: {task.name} ({task.difficulty})\n"
-                    f"Duration: {task.total_weeks} weeks  Budget: ${task.total_budget:,.0f}\n"
-                    f"Channels: {[c.name for c in task.channels]}\n"
-                    f"Segments: {[s.name for s in task.segments]}\n\n"
-                    + _format_observation(obs, task)
-                ),
-            },
-        ]
+    for task_id in tasks_to_run:
+        task = get_task(task_id)
+        rewards: List[float] = []
+        steps_taken = 0
+        score = 0.0
+        success = False
 
-        step = 0
-        while not obs.done:
-            step += 1
-            llm_text = _ask_llm(client, messages)
-            action_dict = _parse_llm_action(llm_text, task)
+        log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
-            error: Optional[str] = None
-            try:
-                gtm_action = GTMAction(**action_dict)
-                obs = env.step(gtm_action)
-            except Exception as exc:
-                error = f"step_failed:{exc}"
-                # Use equal allocation as a safe fallback so the episode can continue
-                obs = env.step(GTMAction(**_equal_action_dict(task)))
+        try:
+            obs = env.reset(task_id=task_id, seed=SEED)
+            messages: List[Dict[str, str]] = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Starting task: {task.name} ({task.difficulty})\n"
+                        f"Duration: {task.total_weeks} weeks  Budget: ${task.total_budget:,.0f}\n"
+                        f"Channels: {[c.name for c in task.channels]}\n"
+                        f"Segments: {[s.name for s in task.segments]}\n\n"
+                        + _format_observation(obs, task)
+                    ),
+                },
+            ]
 
-            reward = float(obs.reward) if obs.reward is not None else 0.0
-            rewards.append(reward)
-            steps_taken = step
+            step = 0
+            while not obs.done:
+                step += 1
+                llm_text = _ask_llm(client, messages)
+                action_dict = _parse_llm_action(llm_text, task)
 
-            log_step(
-                step=step,
-                action=_short_action_str(action_dict),
-                reward=reward,
-                done=bool(obs.done),
-                error=error,
-            )
+                error: Optional[str] = None
+                try:
+                    gtm_action = GTMAction(**action_dict)
+                    obs = env.step(gtm_action)
+                except Exception as exc:
+                    error = f"step_failed:{exc}"
+                    obs = env.step(GTMAction(**_equal_action_dict(task)))
 
-            # Append to context for the next turn (trim aggressively to stay small)
-            messages.append({"role": "assistant", "content": llm_text or "{}"})
-            messages.append(
-                {"role": "user", "content": _format_observation(obs, task)}
-            )
-            if len(messages) > 10:
-                messages = [messages[0]] + messages[-8:]
+                reward = float(obs.reward) if obs.reward is not None else 0.0
+                rewards.append(reward)
+                steps_taken = step
 
-            if obs.done:
-                break
+                log_step(
+                    step=step,
+                    action=_short_action_str(action_dict),
+                    reward=reward,
+                    done=bool(obs.done),
+                    error=error,
+                )
 
-        # Final grader score (env's grader returns a value in [0, 1])
-        grader = env.get_grader_score(env.state.episode_id)
-        score = float(grader) if grader is not None else 0.0
-        score = max(0.0, min(1.0, score))
-        success = score >= SUCCESS_SCORE_THRESHOLD
+                messages.append({"role": "assistant", "content": llm_text or "{}"})
+                messages.append({"role": "user", "content": _format_observation(obs, task)})
+                if len(messages) > 10:
+                    messages = [messages[0]] + messages[-8:]
 
-    except Exception as exc:
-        print(f"[DEBUG] inference failed: {exc}", flush=True)
-    finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+            grader = env.get_grader_score(env.state.episode_id)
+            score = float(grader) if grader is not None else 0.0
+            score = max(0.0, min(1.0, score))
+            success = score >= SUCCESS_SCORE_THRESHOLD
 
-    return 0
+        except Exception as exc:
+            print(f"[DEBUG] inference failed for {task_id}: {exc}", flush=True)
+            success = False
+        finally:
+            log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+            if not success:
+                overall_success = False
+
+    return 0 if overall_success else 1
 
 
 if __name__ == "__main__":
