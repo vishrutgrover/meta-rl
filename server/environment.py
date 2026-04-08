@@ -17,7 +17,8 @@ from models import (
     SegmentMetrics,
 )
 from server.simulation import EXPERIMENT_TYPES, MESSAGING_DIMS, PRICING_ACTIONS
-from server.tasks import create_simulator, get_task, TASKS
+from server.tasks import create_simulator, get_task
+from server.tasks import TASKS as TASK_CONFIGS
 
 
 class GTMEnvironment(Environment):
@@ -41,10 +42,11 @@ class GTMEnvironment(Environment):
         self,
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
-        task_id: str = "channel_optimizer",
+        task: Optional[str] = None,
         **kwargs: Any,
     ) -> GTMObservation:
         """Start a new GTM episode for the given task."""
+        task_id = task or kwargs.get("task_id", "channel_optimizer")
         task_def = get_task(task_id)
         self._task_def = task_def
         self._sim = create_simulator(task_id, seed=seed)
@@ -132,6 +134,7 @@ class GTMEnvironment(Environment):
         if done:
             grader_score = self._task_def.grader(s)
             self._grader_scores[self._state.episode_id] = grader_score
+            reward = grader_score
 
         # Build observation
         channel_metrics = {
