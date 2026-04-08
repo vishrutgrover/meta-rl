@@ -68,6 +68,8 @@ class TaskInfo(BaseModel):
     available_experiments: list[str]
     available_pricing_actions: list[str]
     action_schema: dict
+    has_grader: bool = True
+    grader_endpoint: str = "/grader"
 
 
 @app.get("/tasks")
